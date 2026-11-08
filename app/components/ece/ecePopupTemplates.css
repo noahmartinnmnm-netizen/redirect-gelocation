@@ -1,0 +1,146 @@
+/* Loaded inline: s-modal content is rendered by the admin, outside this app's stylesheets. */
+
+.ece-tpl__intro {
+  margin: 0 0 14px;
+  color: #616161;
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.ece-tpl__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 14px;
+}
+
+/* Card */
+
+.ece-tpl__card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px;
+  border: 1px solid #e3e3e3;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.ece-tpl__card:hover {
+  border-color: #c9c9c9;
+  box-shadow: 0 4px 12px rgba(16, 24, 40, 0.08);
+}
+
+.ece-tpl__card.is-selected {
+  border-color: #5700d1;
+  box-shadow: 0 0 0 2px rgba(87, 0, 209, 0.18);
+}
+
+.ece-tpl__card:focus-visible {
+  outline: 2px solid #005bd3;
+  outline-offset: 2px;
+}
+
+/* Thumbnail: the popup alone on a light canvas, scaled down */
+
+.ece-tpl__thumb {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-width: 0;
+  height: 170px;
+  overflow: hidden;
+  border-radius: 8px;
+  background: #f4f4f5;
+  pointer-events: none;
+  user-select: none;
+}
+
+.ece-tpl__thumb-scale {
+  flex: 0 0 auto;
+  width: 640px;
+  zoom: 0.34;
+}
+
+.ece-tpl__thumb .ece-pp-device {
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.ece-tpl__thumb .ece-pp-browser,
+.ece-tpl__thumb .ece-pp-store {
+  display: none;
+}
+
+.ece-tpl__thumb .ece-pp-stage {
+  height: 500px;
+  background: transparent;
+}
+
+.ece-tpl__thumb .ece-pp-overlay {
+  background: transparent;
+  animation: none;
+}
+
+.ece-tpl__thumb .ece-pp-popup {
+  overflow: hidden;
+  animation: none;
+  box-shadow:
+    0 0 0 1px rgba(15, 23, 42, 0.06),
+    0 12px 32px rgba(15, 23, 42, 0.14);
+}
+
+/* Footer */
+
+.ece-tpl__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.ece-popup .ece-tpl__preview {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  min-height: 28px;
+  padding: 4px 10px;
+  border-radius: 8px;
+  background: #fff;
+  color: #303030;
+  font-size: 13px;
+  font-weight: 550;
+  line-height: 1;
+  box-shadow:
+    inset 0 -1px 0 #b5b5b5,
+    inset 0 0 0 1px #e3e3e3;
+}
+
+.ece-popup .ece-tpl__preview:hover {
+  background: #f7f7f7;
+}
+
+.ece-tpl__name {
+  overflow: hidden;
+  padding: 4px 10px;
+  border-radius: 8px;
+  background: #f1f1f1;
+  color: #303030;
+  font-size: 13px;
+  font-weight: 550;
+  line-height: 18px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ece-tpl__card.is-selected .ece-tpl__name {
+  background: #f0e8ff;
+  color: #5700d1;
+}

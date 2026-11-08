@@ -1,0 +1,90 @@
+{% comment %}
+  Automatic redirect.
+  Reads shop.metafields.ece.rule_country and sends the visitor to that country's URL.
+  Shopify Markets is used only when the country has no rule and ece.markets_routing is not off.
+
+  Optional storefront metafields, read when present:
+  ece.whitelisted_urls, ece.whitelisted_ips, ece.reverse_whitelisted_urls, ece.preserve_relative_base_urls
+{% endcomment %}
+
+{% liquid
+  assign ece_market_id = localization.country.market.id
+  assign ece_market_codes = ""
+  for country in localization.available_countries
+    if country.market.id == ece_market_id
+      assign ece_market_codes = ece_market_codes | append: country.iso_code | append: ","
+    endif
+  endfor
+%}
+
+<ece-auto-redirect-form hidden>
+  {% form 'localization' %}
+    <input type="hidden" name="country_code" value="{{ localization.country.iso_code | escape }}">
+    <input type="hidden" name="return_to" value="{{ request.path | escape }}">
+  {% endform %}
+</ece-auto-redirect-form>
+
+<div id="ece-auto-redirect-custom-html" hidden></div>
+
+<script type="application/json" id="ece-auto-redirect-config">
+  {
+    "shop": {{ shop.permanent_domain | json }},
+    "rules": {{ shop.metafields.ece.rule_country.value | json }},
+    "marketsRouting": {{ shop.metafields.ece.markets_routing.value | json }},
+    "whitelistedUrls": {{ shop.metafields.ece.whitelisted_urls.value | json }},
+    "whitelistedIps": {{ shop.metafields.ece.whitelisted_ips.value | json }},
+    "reverseWhitelistedUrls": {{ shop.metafields.ece.reverse_whitelisted_urls.value | json }},
+    "basePaths": {{ shop.metafields.ece.preserve_relative_base_urls.value | json }},
+    "preserveRelativePath": {{ block.settings.preserve_relative_path | json }},
+    "redirectOnlyOnce": {{ block.settings.redirect_only_once | json }},
+    "cooldownMinutes": {{ block.settings.cooldown_minutes | json }},
+    "localeRoot": {{ routes.root_url | json }},
+    "formCountry": {{ localization.country.iso_code | json }},
+    "currentMarketCountries": {{ ece_market_codes | split: "," | json }},
+    "availableCountries": {{ localization.available_countries | map: "iso_code" | json }},
+    "designMode": {% if request.design_mode %}true{% else %}false{% endif %},
+    "customHtml": {{ block.settings.custom_html | json | replace: "</", "<\/" }},
+    "modalTitle": {{ "auto_redirect.title" | t | json }},
+    "modalYes": {{ "auto_redirect.yes" | t | json }},
+    "modalStay": {{ "auto_redirect.stay" | t | json }}
+  }
+</script>
+
+{% schema %}
+{
+  "name": "Automatic redirect",
+  "target": "body",
+  "javascript": "ece-auto-redirect.js",
+  "stylesheet": "ece-auto-redirect.css",
+  "settings": [
+    {
+      "type": "paragraph",
+      "content": "Sends a visitor to the URL for their country in the rule country metafield. Shopify Markets is used only when that country has no custom rule."
+    },
+    {
+      "type": "checkbox",
+      "id": "preserve_relative_path",
+      "label": "Preserve relative path",
+      "info": "Off by default. When on, the current path is appended to the rule URL after the locale root and base paths are removed.",
+      "default": false
+    },
+    {
+      "type": "checkbox",
+      "id": "redirect_only_once",
+      "label": "Redirect only once",
+      "default": false
+    },
+    {
+      "type": "number",
+      "id": "cooldown_minutes",
+      "label": "Once cooldown (minutes)",
+      "default": 60
+    },
+    {
+      "type": "textarea",
+      "id": "custom_html",
+      "label": "Custom HTML"
+    }
+  ]
+}
+{% endschema %}
