@@ -1,7 +1,7 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
 client_id = "42d01690445b700b8aabc37a802fb9be"
-application_url = "https://example.com"
+application_url = "https://redirect-gelocation.onrender.com"
 embedded = true
 name = "redirect-location"
 
@@ -45,7 +45,11 @@ api_version = "2027-01"
   topics = [ "app/scopes_update" ]
 
 [auth]
-redirect_urls = [ "https://example.com/api/auth" ]
+redirect_urls = [
+  "https://redirect-gelocation.onrender.com/auth/callback",
+  "https://redirect-gelocation.onrender.com/auth/shopify/callback",
+  "https://redirect-gelocation.onrender.com/api/auth/callback"
+]
 
 [build]
 automatically_update_urls_on_dev = true
