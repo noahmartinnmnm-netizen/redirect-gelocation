@@ -1,5 +1,5 @@
 import { useLoaderData } from "react-router";
-import styles from "./privacy.module.css";
+import styles from "./styles.module.css";
 
 export const meta = () => [
   { title: "Privacy Policy | redirect-location" },
@@ -64,8 +64,10 @@ export default function PrivacyPolicy() {
           <h2>2. Information we collect</h2>
 
           <h3>2.1 From merchants (Shopify Admin)</h3>
-          <p>When you install the App, Shopify provides information needed to
-            authenticate and operate the App, which may include:</p>
+          <p>
+            When you install the App, Shopify provides information needed to
+            authenticate and operate the App, which may include:
+          </p>
           <ul>
             <li>Shop domain and shop identifiers</li>
             <li>OAuth access tokens and session data</li>
@@ -127,10 +129,15 @@ export default function PrivacyPolicy() {
               Provide geolocation redirects, popups, market routing helpers, and
               country/IP blocking features you configure
             </li>
-            <li>Remember short-lived visitor preferences required for those features</li>
+            <li>
+              Remember short-lived visitor preferences required for those
+              features
+            </li>
             <li>Provide customer support and troubleshoot issues</li>
             <li>Maintain security, prevent abuse, and improve reliability</li>
-            <li>Comply with legal obligations and Shopify platform requirements</li>
+            <li>
+              Comply with legal obligations and Shopify platform requirements
+            </li>
           </ul>
         </section>
 
@@ -140,8 +147,8 @@ export default function PrivacyPolicy() {
           <ul>
             <li>
               <strong>Shopify</strong> — the App runs on Shopify and uses Shopify
-              APIs; merchant and shop data is processed according to Shopify&apos;s
-              terms and your Shopify settings
+              APIs; merchant and shop data is processed according to
+              Shopify&apos;s terms and your Shopify settings
             </li>
             <li>
               <strong>Service providers</strong> — hosting, database, geolocation
