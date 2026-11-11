@@ -14,6 +14,8 @@ export function EceCountryPicker({
   onChange,
   error,
   disabled = false,
+  emptyNote = "Every country is already covered by another rule.",
+  footNote = "Countries already used by another rule aren't listed.",
 }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -182,14 +184,12 @@ export function EceCountryPicker({
                 0,
             ) ? (
               <p id={`${idPrefix}-country-picker-empty`} className="ece-picker__empty">
-                {normalizedQuery
-                  ? "No countries match that search."
-                  : "Every country is already covered by another rule."}
+                {normalizedQuery ? "No countries match that search." : emptyNote}
               </p>
             ) : null}
           </div>
           <div className="ece-picker__foot">
-            <span>Countries already used by another rule aren&apos;t listed.</span>
+            <span>{footNote}</span>
             <s-button
               id={`${idPrefix}-country-picker-done`}
               variant="primary"

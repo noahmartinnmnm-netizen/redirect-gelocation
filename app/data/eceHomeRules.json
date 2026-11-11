@@ -2,8 +2,8 @@
   "embeds": [
     {
       "id": "ece-embed-popup",
-      "label": "Confirmation popup",
-      "detail": "Asks visitors before redirecting.",
+      "label": "redirect Popup",
+      "detail": "Asks visitors before redirecting, using the design saved on the Popup page.",
       "active": true
     },
     {

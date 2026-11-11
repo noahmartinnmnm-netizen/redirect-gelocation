@@ -1,0 +1,43 @@
+{% comment %}
+  Country Blocker.
+  Block lists and the saved design are read from the shop metafield
+  shop.metafields.ece.ece_country_blocker.
+  Allowed IPs also come from shop.metafields.ece.whitelisted_ips when that
+  field exists, so this embed and the redirect embeds share one allow-list.
+  A whitelisted IP is allowed even when the country is blocked.
+  A failed location lookup does not block the visitor.
+{% endcomment %}
+
+{% unless request.design_mode and block.settings.hide_blocker_in_theme_editor %}
+  <div id="ece-country-blocker" class="ece-country-blocker" hidden></div>
+
+  <script type="application/json" id="ece-country-blocker-config">
+    {
+      "blocker": {{ shop.metafields.ece.ece_country_blocker.value | json | replace: "</", "<\/" }},
+      "whitelistedIps": {{ shop.metafields.ece.whitelisted_ips.value | json | replace: "</", "<\/" }},
+      "designMode": {% if request.design_mode %}true{% else %}false{% endif %}
+    }
+  </script>
+{% endunless %}
+
+{% schema %}
+{
+  "name": "Country Blocker",
+  "target": "body",
+  "javascript": "ece-country-blocker.js",
+  "stylesheet": "ece-country-blocker.css",
+  "settings": [
+    {
+      "type": "paragraph",
+      "content": "Blocks visitors from the countries, IPs, and IP ranges saved on the Country Blocker page. The design is read from the shop metafield ece.ece_country_blocker. An allowed IP can still browse."
+    },
+    {
+      "type": "checkbox",
+      "id": "hide_blocker_in_theme_editor",
+      "label": "Hide blocker in the theme editor",
+      "info": "On the live store the overlay still follows the saved lists. Turn this on while you edit the theme if a blocked preview covers the page.",
+      "default": false
+    }
+  ]
+}
+{% endschema %}

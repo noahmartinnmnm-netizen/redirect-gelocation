@@ -1,14 +1,9 @@
 /* eslint-disable react/prop-types */
 import { useEffect, useState } from "react";
 import welcomeCss from "./eceWelcomePanel.css?inline";
+import { SETUP_STEPS, setupGuideProgress } from "./eceSetupGuide";
 
 const GUIDE_COLLAPSED_KEY = "ece-setup-guide-collapsed";
-
-const STEPS = [
-  { id: "goal", label: "Choose a goal", hint: "Decide where visitors go", icon: "flag" },
-  { id: "activation", label: "Turn it on", hint: "Enable it in your theme", icon: "eye" },
-  { id: "check", label: "Check setup", hint: "Confirm everything works", icon: "check" },
-];
 
 const GOAL_VIEWS = [
   { id: "redirect", label: "Redirect to Another Store", icon: "globe", tone: "green" },
@@ -17,15 +12,21 @@ const GOAL_VIEWS = [
 ];
 
 const ACTIVATION_VIEWS = [
-  { id: "auto", label: "Auto Redirect", icon: "redirect", tone: "blue" },
-  { id: "popup", label: "Geolocation Popup", icon: "pin", tone: "neutral" },
-  { id: "selector", label: "Floating selector", icon: "selector", tone: "neutral" },
+  { id: "auto", label: "Auto Redirect", icon: "redirect", tone: "blue", embedId: "ece-embed-auto" },
+  { id: "popup", label: "Geolocation Popup", icon: "pin", tone: "neutral", embedId: "ece-embed-popup" },
+  { id: "selector", label: "Floating selector", icon: "selector", tone: "neutral", embedId: "ece-embed-switcher" },
 ];
 
 const CHECK_VIEWS = [
   { id: "check", label: "Check setup", icon: "check", tone: "gold" },
   { id: "help", label: "Need help?", icon: "help", tone: "neutral" },
 ];
+
+const EMBED_BY_VIEW = {
+  auto: "ece-embed-auto",
+  popup: "ece-embed-popup",
+  selector: "ece-embed-switcher",
+};
 
 function shopLabel(shop) {
   const handle = String(shop || "")
@@ -70,20 +71,52 @@ function writeGuideCollapsed(collapsed) {
 
 export function EceWelcomePanel({
   shop,
+  rules = [],
+  blocker = null,
+  embeds = [],
   onCreateRedirect,
   onViewRedirects,
+  onCreateBlock,
+  onViewBlocks,
   onSetupMarkets,
   onViewMarkets,
+  onConfigureEmbed,
 }) {
-  const [collapsed, setCollapsed] = useState(false);
-  const [step, setStep] = useState("goal");
+  const progress = setupGuideProgress({ rules, blocker, embeds });
+  const visibleSteps = SETUP_STEPS.filter((item) =>
+    progress.visibleStepIds.includes(item.id),
+  );
+  const [collapsed, setCollapsed] = useState(() => progress.allDone);
+  const [step, setStep] = useState(progress.currentStep);
   const [goalView, setGoalView] = useState("redirect");
   const [activationView, setActivationView] = useState("auto");
   const [checkView, setCheckView] = useState("check");
 
   useEffect(() => {
+    if (progress.allDone) {
+      setCollapsed(true);
+      writeGuideCollapsed(true);
+      setStep("check");
+      return;
+    }
     setCollapsed(readGuideCollapsed());
-  }, []);
+  }, [progress.allDone]);
+
+  useEffect(() => {
+    setStep((current) => {
+      const unlocked =
+        current === "goal" ||
+        (current === "activation" && progress.goalDone) ||
+        (current === "check" && progress.activationDone);
+      if (!unlocked) return progress.currentStep;
+      const currentIndex = SETUP_STEPS.findIndex((item) => item.id === current);
+      const recommendedIndex = SETUP_STEPS.findIndex(
+        (item) => item.id === progress.currentStep,
+      );
+      if (recommendedIndex > currentIndex) return progress.currentStep;
+      return current;
+    });
+  }, [progress.activationDone, progress.currentStep, progress.goalDone]);
 
   function hideGuide() {
     setCollapsed(true);
@@ -93,7 +126,17 @@ export function EceWelcomePanel({
   function showGuide() {
     setCollapsed(false);
     writeGuideCollapsed(false);
+    setStep(progress.currentStep);
   }
+
+  function selectStep(nextStep) {
+    if (!progress.visibleStepIds.includes(nextStep)) return;
+    setStep(nextStep);
+  }
+
+  const embedById = Object.fromEntries(
+    (embeds || []).map((embed) => [embed.id, embed]),
+  );
 
   if (collapsed) {
     return (
@@ -114,7 +157,7 @@ export function EceWelcomePanel({
             </p>
           </div>
           <div className="ece-welcome__collapsed-progress">
-            <SetupProgress compact />
+            <SetupProgress compact progress={progress} />
           </div>
           <button
             type="button"
@@ -128,8 +171,8 @@ export function EceWelcomePanel({
     );
   }
 
-  const stepIndex = STEPS.findIndex((item) => item.id === step);
-  const currentStep = STEPS[stepIndex];
+  const stepIndex = SETUP_STEPS.findIndex((item) => item.id === step);
+  const currentStep = SETUP_STEPS[stepIndex] || SETUP_STEPS[0];
   const views =
     step === "activation" ? ACTIVATION_VIEWS : step === "check" ? CHECK_VIEWS : GOAL_VIEWS;
   const activeView =
@@ -161,7 +204,7 @@ export function EceWelcomePanel({
         </button>
       </div>
 
-      <SetupProgress />
+      <SetupProgress progress={progress} />
 
       <div className="ece-welcome__body">
         <div
@@ -170,9 +213,13 @@ export function EceWelcomePanel({
           aria-label="Setup steps"
           aria-orientation="vertical"
         >
-          {STEPS.map((item, index) => {
+          {visibleSteps.map((item) => {
             const active = step === item.id;
-            const done = item.id === "goal";
+            const done =
+              (item.id === "goal" && progress.goalDone) ||
+              (item.id === "activation" && progress.activationDone) ||
+              (item.id === "check" && progress.checkDone);
+            const number = SETUP_STEPS.findIndex((entry) => entry.id === item.id) + 1;
             return (
               <button
                 key={item.id}
@@ -182,10 +229,10 @@ export function EceWelcomePanel({
                 role="tab"
                 aria-selected={active}
                 aria-controls={`ece-welcome-panel-${item.id}`}
-                onClick={() => setStep(item.id)}
+                onClick={() => selectStep(item.id)}
               >
                 <span className="ece-welcome__marker" aria-hidden="true">
-                  {done ? <Icon name="check" /> : index + 1}
+                  {done ? <Icon name="check" /> : number}
                 </span>
                 <span className="ece-welcome__step-text">
                   <span className="ece-welcome__step-label">{item.label}</span>
@@ -205,7 +252,7 @@ export function EceWelcomePanel({
           <div className="ece-welcome__stage-head">
             <div>
               <span className="ece-welcome__stage-count">
-                Step {stepIndex + 1} of {STEPS.length}
+                Step {stepIndex + 1} of {SETUP_STEPS.length}
               </span>
               <h3 className="ece-welcome__stage-title">{currentStep.label}</h3>
             </div>
@@ -233,14 +280,45 @@ export function EceWelcomePanel({
           {step === "goal" && goalView === "redirect" ? (
             <RedirectStoreCard onCreate={onCreateRedirect} onView={onViewRedirects} />
           ) : null}
-          {step === "goal" && goalView === "block" ? <BlockCountryCard /> : null}
+          {step === "goal" && goalView === "block" ? (
+            <BlockCountryCard onCreate={onCreateBlock} onView={onViewBlocks} />
+          ) : null}
           {step === "goal" && goalView === "markets" ? (
             <ShopifyMarketsCard onSetup={onSetupMarkets} onView={onViewMarkets} />
           ) : null}
-          {step === "activation" && activationView === "auto" ? <AutoRedirectCard /> : null}
-          {step === "activation" && activationView === "popup" ? <PopupCard /> : null}
-          {step === "activation" && activationView === "selector" ? <FloatingSelectorCard /> : null}
-          {step === "check" && checkView === "check" ? <CheckSetupCard /> : null}
+          {step === "activation" && activationView === "auto" ? (
+            <ActivationCard
+              icon="redirect"
+              title="Redirect automatically"
+              copy="Send customers to the right store instantly, with no popup and no extra step."
+              embed={embedById[EMBED_BY_VIEW.auto]}
+              enableLabel="Enable Auto Redirect"
+              onConfigure={onConfigureEmbed}
+            />
+          ) : null}
+          {step === "activation" && activationView === "popup" ? (
+            <ActivationCard
+              icon="pin"
+              title="Show a geolocation popup"
+              copy="Let visitors confirm their country in a popup before they continue."
+              embed={embedById[EMBED_BY_VIEW.popup]}
+              enableLabel="Enable Geolocation Popup"
+              onConfigure={onConfigureEmbed}
+            />
+          ) : null}
+          {step === "activation" && activationView === "selector" ? (
+            <ActivationCard
+              icon="selector"
+              title="Show a floating selector"
+              copy="Let visitors switch country and language from a selector that stays on the page."
+              embed={embedById[EMBED_BY_VIEW.selector]}
+              enableLabel="Enable Floating Selector"
+              onConfigure={onConfigureEmbed}
+            />
+          ) : null}
+          {step === "check" && checkView === "check" ? (
+            <CheckSetupCard embeds={embeds} onConfigure={onConfigureEmbed} />
+          ) : null}
           {step === "check" && checkView === "help" ? <HelpCard /> : null}
         </div>
       </div>
@@ -254,22 +332,28 @@ function stepLabel(step) {
   return "Goal options";
 }
 
-function SetupProgress({ compact = false }) {
+function SetupProgress({ compact = false, progress }) {
+  const completed = progress?.completed ?? 0;
+  const total = progress?.total ?? SETUP_STEPS.length;
+  const percent = progress?.percent ?? 0;
+
   return (
     <div className={`ece-welcome__progress${compact ? " is-compact" : ""}`}>
       <div className="ece-welcome__meter">
-        <span>1 of 2 steps complete</span>
-        <span className="ece-welcome__meter-value">50%</span>
+        <span>
+          {completed} of {total} steps complete
+        </span>
+        <span className="ece-welcome__meter-value">{percent}%</span>
       </div>
       <div
         className="ece-welcome__track"
         role="progressbar"
-        aria-valuenow={50}
+        aria-valuenow={percent}
         aria-valuemin={0}
         aria-valuemax={100}
         aria-label="Setup progress"
       >
-        <div className="ece-welcome__fill" />
+        <div className="ece-welcome__fill" style={{ width: `${percent}%` }} />
       </div>
     </div>
   );
@@ -324,16 +408,16 @@ function ShopifyMarketsCard({ onSetup, onView }) {
   );
 }
 
-function BlockCountryCard() {
+function BlockCountryCard({ onCreate, onView }) {
   return (
     <article className="ece-welcome__card">
       <CardHead icon="lock" tone="neutral" title="Block visitors by country" />
       <p className="ece-welcome__copy">Stop shoppers from selected countries from entering this store.</p>
       <div className="ece-welcome__actions">
-        <button type="button" className="ece-welcome__btn">
+        <button type="button" className="ece-welcome__btn" onClick={onCreate}>
           Create block
         </button>
-        <button type="button" className="ece-welcome__link">
+        <button type="button" className="ece-welcome__link" onClick={onView}>
           View blocks
         </button>
       </div>
@@ -341,101 +425,66 @@ function BlockCountryCard() {
   );
 }
 
-function AutoRedirectCard() {
+function ActivationCard({ icon, title, copy, embed, enableLabel, onConfigure }) {
+  const active = Boolean(embed?.active);
   return (
     <article className="ece-welcome__card">
       <CardHead
-        icon="redirect"
+        icon={icon}
         tone="blue"
-        title="Redirect automatically"
-        badge={<span className="ece-welcome__badge is-info">Disabled</span>}
+        title={title}
+        badge={
+          <span className={`ece-welcome__badge${active ? " is-success" : " is-info"}`}>
+            {active ? "Enabled" : "Disabled"}
+          </span>
+        }
       />
-      <p className="ece-welcome__copy">
-        Send customers to the right store instantly, with no popup and no extra step.
-      </p>
+      <p className="ece-welcome__copy">{copy}</p>
       <div className="ece-welcome__actions">
-        <button type="button" className="ece-welcome__btn">
-          Enable Auto Redirect
+        <button
+          type="button"
+          className="ece-welcome__btn"
+          onClick={() => onConfigure?.(embed)}
+          disabled={!embed}
+        >
+          {active ? "Configure" : enableLabel}
         </button>
       </div>
     </article>
   );
 }
 
-function PopupCard() {
-  return (
-    <article className="ece-welcome__card">
-      <CardHead
-        icon="pin"
-        tone="blue"
-        title="Show a geolocation popup"
-        badge={<span className="ece-welcome__badge is-info">Disabled</span>}
-      />
-      <p className="ece-welcome__copy">
-        Let visitors confirm their country in a popup before they continue.
-      </p>
-      <div className="ece-welcome__actions">
-        <button type="button" className="ece-welcome__btn">
-          Enable Geolocation Popup
-        </button>
-      </div>
-    </article>
-  );
-}
+function CheckSetupCard({ embeds = [], onConfigure }) {
+  const rows = ACTIVATION_VIEWS.map((view) => {
+    const embed = embeds.find((item) => item.id === view.embedId);
+    const active = Boolean(embed?.active);
+    return { ...view, embed, active };
+  });
 
-function FloatingSelectorCard() {
-  return (
-    <article className="ece-welcome__card">
-      <CardHead
-        icon="selector"
-        tone="blue"
-        title="Show a floating selector"
-        badge={<span className="ece-welcome__badge is-info">Disabled</span>}
-      />
-      <p className="ece-welcome__copy">
-        Let visitors switch country and language from a selector that stays on the page.
-      </p>
-      <div className="ece-welcome__actions">
-        <button type="button" className="ece-welcome__btn">
-          Enable Floating Selector
-        </button>
-      </div>
-    </article>
-  );
-}
-
-function CheckSetupCard() {
   return (
     <article className="ece-welcome__card">
       <CardHead icon="check" tone="gold" title="Check your setup" />
       <ul className="ece-welcome__statuses">
-        <li className="ece-welcome__status">
-          <span className="ece-welcome__status-name">
-            Auto Redirect
-            <span className="ece-welcome__badge is-warning">Disabled</span>
-          </span>
-          <button type="button" className="ece-welcome__btn is-small">
-            Turn it on
-          </button>
-        </li>
-        <li className="ece-welcome__status">
-          <span className="ece-welcome__status-name">
-            Geolocation Popup
-            <span className="ece-welcome__badge is-warning">Disabled</span>
-          </span>
-          <button type="button" className="ece-welcome__btn is-small">
-            Turn it on
-          </button>
-        </li>
-        <li className="ece-welcome__status">
-          <span className="ece-welcome__status-name">
-            Floating selector
-            <span className="ece-welcome__badge is-warning">Disabled</span>
-          </span>
-          <button type="button" className="ece-welcome__btn is-small">
-            Turn it on
-          </button>
-        </li>
+        {rows.map((row) => (
+          <li key={row.id} className="ece-welcome__status">
+            <span className="ece-welcome__status-name">
+              {row.label}
+              <span
+                className={`ece-welcome__badge${row.active ? " is-success" : " is-warning"}`}
+              >
+                {row.active ? "Enabled" : "Disabled"}
+              </span>
+            </span>
+            <button
+              type="button"
+              className="ece-welcome__btn is-small"
+              onClick={() => onConfigure?.(row.embed)}
+              disabled={!row.embed}
+            >
+              {row.active ? "Configure" : "Turn it on"}
+            </button>
+          </li>
+        ))}
       </ul>
     </article>
   );
@@ -446,7 +495,9 @@ function HelpCard() {
     <article className="ece-welcome__card">
       <CardHead icon="help" tone="neutral" title="Need help?" />
       <p className="ece-welcome__copy">
-        Pick a goal, turn it on in your theme, then use Check setup to confirm Auto Redirect, the Geolocation Popup, and the Floating selector.
+        Pick a goal, turn it on in your theme, then check setup. Short answers
+        live on the{" "}
+        <s-link href="/app/faq">FAQ</s-link> page.
       </p>
     </article>
   );

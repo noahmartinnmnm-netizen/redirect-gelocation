@@ -3,5 +3,14 @@
     "title": "Continue to your local store?",
     "yes": "Yes, take me there",
     "stay": "Stay here"
+  },
+  "floating_selector": {
+    "open": "Open country and language selector",
+    "country": "Country",
+    "language": "Language",
+    "search": "Search countries",
+    "empty": "No countries match",
+    "close": "Hide selector for this session",
+    "select": "Select"
   }
 }

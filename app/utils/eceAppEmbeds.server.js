@@ -18,9 +18,12 @@ const ECE_THEME_SETTINGS_QUERY = `#graphql
   }
 `;
 
-/** Theme app-embed handles this admin can detect. Popup and switcher are not in the extension yet. */
+/** Theme app-embed handles this admin can detect. */
 export const ECE_THEME_EMBED_HANDLES = {
+  "ece-embed-popup": "redirect-popup",
   "ece-embed-auto": "auto-redirect",
+  "ece-embed-switcher": "floating-selector",
+  "ece-embed-blocker": "country-blocker",
 };
 
 export function stripThemeSettingsComments(raw) {

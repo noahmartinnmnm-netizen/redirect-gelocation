@@ -3,9 +3,9 @@ import { useEffect, useRef, useState } from "react";
 import { useFetcher, useNavigate, useRevalidator } from "react-router";
 import { useAppBridge } from "@shopify/app-bridge-react";
 import { EceActivateRedirection } from "./EceActivateRedirection";
+import { EceDashboardOverview } from "./EceDashboardOverview";
 import { EceAddRuleModal } from "./EceRuleModals";
 import { EcePopupTemplatesModal, useEcePopupTemplates } from "./EcePopupTemplates";
-import { EceSupportPanels } from "./EceSupportPanels";
 import { EceWelcomePanel } from "./EceWelcomePanel";
 import {
   catalogGroups,
@@ -36,6 +36,7 @@ export function EceHomePage({
   embedsError,
   rules = [],
   rulesError,
+  blocker = null,
   countryCatalog,
 }) {
   const shopify = useAppBridge();
@@ -92,7 +93,8 @@ export function EceHomePage({
     addModalRef.current?.hideOverlay();
     setAddDraft(emptyDraft());
     shopify.toast.show("Rule added");
-  }, [fetcher.data, fetcher.state, shopify]);
+    revalidator.revalidate();
+  }, [fetcher.data, fetcher.state, revalidator, shopify]);
 
   function configureEmbed(embed) {
     if (embed.editorUrl) {
@@ -156,38 +158,37 @@ export function EceHomePage({
   }
 
   return (
-    <s-page id="ece-home" heading="Country routing" inlineSize="large">
-      <s-button
-        id="ece-home-create"
-        slot="primary-action"
-        variant="primary"
-        disabled={saving}
-        onClick={openCreateRedirect}
-      >
-        Create redirect
-      </s-button>
-      <s-button
-        id="ece-home-view"
-        slot="secondary-actions"
-        onClick={() => navigate(RULE_ACTION)}
-      >
-        View redirects
-      </s-button>
-
+    <s-page id="ece-home" heading="Dashboard" inlineSize="large">
       <EceWelcomePanel
         shop={shop}
+        rules={rules}
+        blocker={blocker}
+        embeds={embeds}
         onCreateRedirect={openCreateRedirect}
         onViewRedirects={() => navigate(RULE_ACTION)}
+        onCreateBlock={() => navigate("/app/blocker")}
+        onViewBlocks={() => navigate("/app/blocker")}
         onSetupMarkets={openShopifyMarkets}
         onViewMarkets={() => navigate(RULE_ACTION)}
+        onConfigureEmbed={configureEmbed}
       />
 
-      <EceActivateRedirection
+      <EceDashboardOverview
+        rules={rules}
+        rulesError={rulesError}
         embeds={embeds}
-        embedsError={embedsError}
-        onConfigure={configureEmbed}
+        onCreateRedirect={openCreateRedirect}
+        onViewRedirects={() => navigate(RULE_ACTION)}
+        onOpenPopup={() => navigate("/app/popup")}
+        onOpenBlocker={() => navigate("/app/blocker")}
+        activation={
+          <EceActivateRedirection
+            embeds={embeds}
+            embedsError={embedsError}
+            onConfigure={configureEmbed}
+          />
+        }
       />
-      <EceSupportPanels />
 
       <EceAddRuleModal
         modalRef={addModalRef}

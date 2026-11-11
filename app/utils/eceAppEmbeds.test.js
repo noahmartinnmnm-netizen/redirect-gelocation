@@ -43,11 +43,35 @@ const ENABLED = {
   },
 };
 
+test("an enabled redirect popup block is active", () => {
+  const blocks = {
+    "222": {
+      type: "shopify://apps/ece-redirect/blocks/redirect-popup/0bf29b70",
+      disabled: false,
+    },
+  };
+  const result = embedsWithThemeStatus(EMBEDS, settings(blocks));
+  assert.equal(result.find((embed) => embed.id === "ece-embed-popup").active, true);
+  assert.equal(result.find((embed) => embed.id === "ece-embed-auto").active, false);
+});
+
 test("an enabled automatic redirect block is active", () => {
   const result = embedsWithThemeStatus(EMBEDS, settings(ENABLED));
   assert.equal(result.find((embed) => embed.id === "ece-embed-auto").active, true);
   assert.equal(result.find((embed) => embed.id === "ece-embed-popup").active, false);
   assert.equal(result.find((embed) => embed.id === "ece-embed-switcher").active, false);
+});
+
+test("an enabled floating selector block is active", () => {
+  const blocks = {
+    "333": {
+      type: "shopify://apps/ece-redirect/blocks/floating-selector/0bf29b70",
+      disabled: false,
+    },
+  };
+  const result = embedsWithThemeStatus(EMBEDS, settings(blocks));
+  assert.equal(result.find((embed) => embed.id === "ece-embed-switcher").active, true);
+  assert.equal(result.find((embed) => embed.id === "ece-embed-auto").active, false);
 });
 
 test("a disabled automatic redirect block is inactive", () => {

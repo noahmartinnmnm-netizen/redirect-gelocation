@@ -16,10 +16,13 @@ export default function App() {
   return (
     <AppProvider embedded apiKey={apiKey}>
       <s-app-nav>
-        <s-link href="/app">Country routing</s-link>
+        <s-link href="/app" rel="home">
+          Dashboard
+        </s-link>
         <s-link href="/app/redirect">Redirect</s-link>
         <s-link href="/app/popup">Popup</s-link>
-        <s-link href="/app/additional">Additional page</s-link>
+        <s-link href="/app/blocker">Country Blocker</s-link>
+        <s-link href="/app/faq">FAQ</s-link>
       </s-app-nav>
       <Outlet />
     </AppProvider>

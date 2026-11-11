@@ -1,0 +1,223 @@
+{% comment %}
+  Floating selector.
+  A persistent country and language switcher. It does not redirect on page load.
+  Destinations come from shop.metafields.ece.rule_country.
+  Shopify Markets countries are shown only while ece.markets_routing is not off.
+  URL and IP whitelists do not hide this embed.
+{% endcomment %}
+
+{% liquid
+  assign ece_market_id = localization.country.market.id
+  assign ece_market_codes = ""
+  for country in localization.available_countries
+    if country.market.id == ece_market_id
+      assign ece_market_codes = ece_market_codes | append: country.iso_code | append: ","
+    endif
+  endfor
+%}
+
+{% unless request.design_mode and block.settings.hide_selector_in_theme_editor %}
+  <ece-floating-selector-form hidden>
+    {% form 'localization' %}
+      <input type="hidden" name="country_code" value="{{ localization.country.iso_code | escape }}">
+      <input type="hidden" name="language_code" value="{{ localization.language.iso_code | escape }}">
+      <input type="hidden" name="return_to" value="{{ request.path | escape }}">
+    {% endform %}
+  </ece-floating-selector-form>
+
+  <div id="ece-floating-selector" class="ece-floating-selector" hidden></div>
+
+  <script type="application/json" id="ece-floating-selector-config">
+    {
+      "shop": {{ shop.permanent_domain | json }},
+      "rules": {{ shop.metafields.ece.rule_country.value | json | replace: "</", "<\/" }},
+      "marketsRouting": {{ shop.metafields.ece.markets_routing.value | json }},
+      "localeRoot": {{ routes.root_url | json }},
+      "formCountry": {{ localization.country.iso_code | json }},
+      "formCountryName": {{ localization.country.name | json | replace: "</", "<\/" }},
+      "formLanguage": {{ localization.language.iso_code | json }},
+      "currentMarketCountries": {{ ece_market_codes | split: "," | json }},
+      "countries": [
+        {%- for country in localization.available_countries -%}
+          {
+            "code": {{ country.iso_code | json }},
+            "name": {{ country.name | json | replace: "</", "<\/" }},
+            "currency": {
+              "code": {{ country.currency.iso_code | default: "" | json }},
+              "symbol": {{ country.currency.symbol | default: "" | json | replace: "</", "<\/" }}
+            }
+          }{%- unless forloop.last -%},{%- endunless -%}
+        {%- endfor -%}
+      ],
+      "languages": [
+        {%- for language in localization.available_languages -%}
+          {
+            "code": {{ language.iso_code | json }},
+            "name": {{ language.endonym_name | default: language.name | json | replace: "</", "<\/" }}
+          }{%- unless forloop.last -%},{%- endunless -%}
+        {%- endfor -%}
+      ],
+      "designMode": {% if request.design_mode %}true{% else %}false{% endif %},
+      "hideInEditor": {{ block.settings.hide_selector_in_theme_editor | json }},
+      "copy": {
+        "open": {{ "floating_selector.open" | t | json }},
+        "country": {{ "floating_selector.country" | t | json }},
+        "language": {{ "floating_selector.language" | t | json }},
+        "search": {{ "floating_selector.search" | t | json }},
+        "empty": {{ "floating_selector.empty" | t | json }},
+        "close": {{ "floating_selector.close" | t | json }},
+        "select": {{ "floating_selector.select" | t | json }}
+      },
+      "settings": {
+        "position": {{ block.settings.position | json }},
+        "showCountry": {{ block.settings.show_country | json }},
+        "showSearch": {{ block.settings.show_search | json }},
+        "showLanguage": {{ block.settings.show_language | json }},
+        "showLanguageName": {{ block.settings.show_language_name | json }},
+        "showCountryCode": {{ block.settings.show_country_code | json }},
+        "showCountryName": {{ block.settings.show_country_name | json }},
+        "showCurrencySymbol": {{ block.settings.show_currency_symbol | json }},
+        "showCurrencyCode": {{ block.settings.show_currency_code | json }},
+        "showClose": {{ block.settings.show_close | json }},
+        "pillBackground": {{ block.settings.pill_background | json }},
+        "pillText": {{ block.settings.pill_text | json }},
+        "dropdownBackground": {{ block.settings.dropdown_background | json }},
+        "fontColor": {{ block.settings.font_color | json }},
+        "hoverColor": {{ block.settings.hover_color | json }}
+      }
+    }
+  </script>
+{% endunless %}
+
+{% schema %}
+{
+  "name": "Floating selector",
+  "target": "body",
+  "javascript": "ece-floating-selector.js",
+  "stylesheet": "ece-floating-selector.css",
+  "settings": [
+    {
+      "type": "paragraph",
+      "content": "Shows a floating country and language switcher. It never auto-redirects on page load. Custom country rules overwrite matching market links. When Markets routing is off in the app, only rule countries are listed."
+    },
+    {
+      "type": "checkbox",
+      "id": "hide_selector_in_theme_editor",
+      "label": "Hide selector in the theme editor",
+      "info": "On the live store the switcher still follows these settings. Turn this on while you edit the theme if the widget covers the preview.",
+      "default": false
+    },
+    {
+      "type": "header",
+      "content": "Layout"
+    },
+    {
+      "type": "select",
+      "id": "position",
+      "label": "Position",
+      "options": [
+        { "value": "bottom-left", "label": "Bottom left" },
+        { "value": "bottom-right", "label": "Bottom right" },
+        { "value": "top-left", "label": "Top left" },
+        { "value": "top-right", "label": "Top right" }
+      ],
+      "default": "bottom-left"
+    },
+    {
+      "type": "header",
+      "content": "What to show"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_country",
+      "label": "Country selector",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "show_search",
+      "label": "Country search",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "show_language",
+      "label": "Language selector",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "show_language_name",
+      "label": "Show language name",
+      "info": "Off shows the language code instead.",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "show_country_code",
+      "label": "Show country code",
+      "default": false
+    },
+    {
+      "type": "checkbox",
+      "id": "show_country_name",
+      "label": "Show country name",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "show_currency_symbol",
+      "label": "Show currency symbol",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "show_currency_code",
+      "label": "Show currency code",
+      "default": false
+    },
+    {
+      "type": "checkbox",
+      "id": "show_close",
+      "label": "Show close button",
+      "info": "Hides the widget for the rest of this browser session.",
+      "default": true
+    },
+    {
+      "type": "header",
+      "content": "Colors"
+    },
+    {
+      "type": "color",
+      "id": "pill_background",
+      "label": "Pill background",
+      "default": "#111827"
+    },
+    {
+      "type": "color",
+      "id": "pill_text",
+      "label": "Pill text",
+      "default": "#ffffff"
+    },
+    {
+      "type": "color",
+      "id": "dropdown_background",
+      "label": "Dropdown background",
+      "info": "Pure white is treated as transparent glass.",
+      "default": "#f8fafc"
+    },
+    {
+      "type": "color",
+      "id": "font_color",
+      "label": "Dropdown text",
+      "default": "#111827"
+    },
+    {
+      "type": "color",
+      "id": "hover_color",
+      "label": "Hover background",
+      "default": "#f3f4f6"
+    }
+  ]
+}
+{% endschema %}

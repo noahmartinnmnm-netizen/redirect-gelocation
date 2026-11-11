@@ -120,10 +120,11 @@
 }
 
 .ece-welcome__fill {
-  width: 50%;
+  width: 0%;
   height: 100%;
   border-radius: inherit;
   background: linear-gradient(90deg, #7c3aed 0%, #5700d1 100%);
+  transition: width 240ms ease;
 }
 
 .ece-welcome__progress.is-compact {
@@ -470,6 +471,11 @@
 .ece-welcome__badge.is-info {
   background: #e0f0ff;
   color: #00527c;
+}
+
+.ece-welcome__badge.is-success {
+  background: #cdfee1;
+  color: #0c5132;
 }
 
 .ece-welcome__badge.is-warning {

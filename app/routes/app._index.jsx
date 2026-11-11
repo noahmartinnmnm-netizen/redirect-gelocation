@@ -6,6 +6,7 @@ import eceHomeRules from "../data/eceHomeRules.json";
 import { EceHomePage } from "../components/ece/EceHomePage";
 import { withCatalogCountryNames } from "../components/ece/eceRuleModel";
 import { loadEceAppEmbeds } from "../utils/eceAppEmbeds.server";
+import { loadEceCountryBlocker } from "../utils/eceCountryBlocker.server";
 import { loadEceRouteBook } from "../utils/eceRouteBook.server";
 
 const HOME_SCOPES = ["read_themes"];
@@ -43,9 +44,10 @@ export const loader = async ({ request }) => {
 
   await requestHomeScopes(scopes, missingHomeScopes(session));
 
-  const [embedResult, routeBook] = await Promise.all([
+  const [embedResult, routeBook, blockerResult] = await Promise.all([
     loadEceAppEmbeds(admin, eceHomeRules.embeds),
     loadEceRouteBook(admin),
+    loadEceCountryBlocker(admin),
   ]);
 
   if (embedResult.themesAccessDenied) {
@@ -54,31 +56,43 @@ export const loader = async ({ request }) => {
 
   const shopHandle = String(session.shop || "").replace(/\.myshopify\.com$/i, "");
   const apiKey = process.env.SHOPIFY_API_KEY || "";
-  const autoRedirectEditorUrl =
-    shopHandle && apiKey
-      ? `https://admin.shopify.com/store/${shopHandle}/themes/current/editor?context=apps&template=index&activateAppId=${apiKey}/auto-redirect`
-      : "";
+  const editorHandles = {
+    "ece-embed-popup": "redirect-popup",
+    "ece-embed-auto": "auto-redirect",
+    "ece-embed-switcher": "floating-selector",
+  };
 
   return {
     shop: session.shop,
-    embeds: embedResult.embeds.map((embed) =>
-      embed.id === "ece-embed-auto"
-        ? { ...embed, editorUrl: autoRedirectEditorUrl }
-        : embed,
-    ),
+    embeds: embedResult.embeds.map((embed) => {
+      const handle = editorHandles[embed.id];
+      if (!handle || !shopHandle || !apiKey) return embed;
+      return {
+        ...embed,
+        editorUrl: `https://admin.shopify.com/store/${shopHandle}/themes/current/editor?context=apps&template=index&activateAppId=${apiKey}/${handle}`,
+      };
+    }),
     embedsError: embedResult.embedsError,
     rules: withCatalogCountryNames(
       routeBook.rules,
       eceHomeRules.countryCatalog,
     ),
     rulesError: routeBook.rulesError,
+    blocker: blockerResult.blocker,
     countryCatalog: eceHomeRules.countryCatalog,
   };
 };
 
 export default function Index() {
-  const { shop, embeds, embedsError, rules, rulesError, countryCatalog } =
-    useLoaderData();
+  const {
+    shop,
+    embeds,
+    embedsError,
+    rules,
+    rulesError,
+    blocker,
+    countryCatalog,
+  } = useLoaderData();
 
   return (
     <EceHomePage
@@ -87,6 +101,7 @@ export default function Index() {
       embedsError={embedsError}
       rules={rules}
       rulesError={rulesError}
+      blocker={blocker}
       countryCatalog={countryCatalog}
     />
   );

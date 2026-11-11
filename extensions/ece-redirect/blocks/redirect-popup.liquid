@@ -1,0 +1,91 @@
+{% comment %}
+  redirect Popup.
+  The visitor sees the design saved on the Popup page:
+  shop.metafields.ece.pd_desgine.value
+  Redirect targets come from shop.metafields.ece.rule_country.
+  Shopify Markets is used only when that country has no custom rule.
+{% endcomment %}
+
+{% liquid
+  assign ece_market_id = localization.country.market.id
+  assign ece_market_codes = ""
+  for country in localization.available_countries
+    if country.market.id == ece_market_id
+      assign ece_market_codes = ece_market_codes | append: country.iso_code | append: ","
+    endif
+  endfor
+%}
+
+{% unless request.design_mode and block.settings.hide_popup_in_theme_editor %}
+  <ece-redirect-popup-form hidden>
+    {% form 'localization' %}
+      <input type="hidden" name="country_code" value="{{ localization.country.iso_code | escape }}">
+      <input type="hidden" name="language_code" value="{{ localization.language.iso_code | escape }}">
+      <input type="hidden" name="return_to" value="{{ request.path | escape }}">
+    {% endform %}
+  </ece-redirect-popup-form>
+
+  <div id="ece-redirect-popup" class="ece-redirect-popup" hidden></div>
+
+  <script type="application/json" id="ece-redirect-popup-config">
+    {
+      "shop": {{ shop.permanent_domain | json }},
+      "design": {{ shop.metafields.ece.pd_desgine.value | json | replace: "</", "<\/" }},
+      "rules": {{ shop.metafields.ece.rule_country.value | json | replace: "</", "<\/" }},
+      "marketsRouting": {{ shop.metafields.ece.markets_routing.value | json }},
+      "whitelistedUrls": {{ shop.metafields.ece.whitelisted_urls.value | json | replace: "</", "<\/" }},
+      "whitelistedIps": {{ shop.metafields.ece.whitelisted_ips.value | json | replace: "</", "<\/" }},
+      "reverseWhitelistedUrls": {{ shop.metafields.ece.reverse_whitelisted_urls.value | json | replace: "</", "<\/" }},
+      "basePaths": {{ shop.metafields.ece.preserve_relative_base_urls.value | json | replace: "</", "<\/" }},
+      "localeRoot": {{ routes.root_url | json }},
+      "formCountry": {{ localization.country.iso_code | json }},
+      "formCountryName": {{ localization.country.name | json }},
+      "formLanguage": {{ localization.language.iso_code | json }},
+      "currentMarketCountries": {{ ece_market_codes | split: "," | json }},
+      "countries": [
+        {%- for country in localization.available_countries -%}
+          {
+            "code": {{ country.iso_code | json }},
+            "name": {{ country.name | json | replace: "</", "<\/" }},
+            "currency": {
+              "code": {{ country.currency.iso_code | default: "" | json }},
+              "symbol": {{ country.currency.symbol | default: "" | json | replace: "</", "<\/" }}
+            }
+          }{%- unless forloop.last -%},{%- endunless -%}
+        {%- endfor -%}
+      ],
+      "languages": [
+        {%- for language in localization.available_languages -%}
+          {
+            "code": {{ language.iso_code | json }},
+            "name": {{ language.endonym_name | default: language.name | json | replace: "</", "<\/" }}
+          }{%- unless forloop.last -%},{%- endunless -%}
+        {%- endfor -%}
+      ],
+      "designMode": {% if request.design_mode %}true{% else %}false{% endif %},
+      "hideInEditor": {{ block.settings.hide_popup_in_theme_editor | json }}
+    }
+  </script>
+{% endunless %}
+
+{% schema %}
+{
+  "name": "redirect Popup",
+  "target": "body",
+  "javascript": "ece-redirect-popup.js",
+  "stylesheet": "ece-redirect-popup.css",
+  "settings": [
+    {
+      "type": "paragraph",
+      "content": "Shows the popup saved in the app. The design is read from the shop metafield ece.pd_desgine. Visitors are sent on only after they confirm. A custom country rule wins over Shopify Markets."
+    },
+    {
+      "type": "checkbox",
+      "id": "hide_popup_in_theme_editor",
+      "label": "Hide popup in the theme editor",
+      "info": "On the live store the popup still follows the saved design. Turn this on while you edit the theme if the popup covers the preview.",
+      "default": false
+    }
+  ]
+}
+{% endschema %}
