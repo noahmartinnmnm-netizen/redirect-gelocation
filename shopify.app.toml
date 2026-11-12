@@ -3,7 +3,8 @@
 client_id = "42d01690445b700b8aabc37a802fb9be"
 application_url = "https://redirect-gelocation.onrender.com"
 embedded = true
-name = "redirect-location"
+# Keep admin nav name short (BFS 4.1.3: avoid truncation; aim ≤20 chars).
+name = "Geolocation+ Country Redirect"
 
 [access_scopes]
 # Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes

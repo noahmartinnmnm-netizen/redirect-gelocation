@@ -1,0 +1,16 @@
+﻿Geolocation Redirect by Country — Shopify Feature Media Video
+Duration: ~19 seconds | Resolution: 1600x900
+
+VOICEOVER SCRIPT:
+Send every shopper to the right store for their country. Redirect automatically, confirm with a friendly popup, or let buyers switch markets themselves. Block countries you don't serve. More relevant shopping, higher conversions worldwide. Install Geolocation Redirect by Country today.
+
+SCENE FLOW:
+1. Hero — App icon + name
+2. Benefit — Send shoppers to the right store
+3. Modes — Auto Redirect / Confirm Popup / Market Switcher
+4. Protection — Block countries you don't serve
+5. CTA — Higher conversions worldwide / Install
+
+UPLOAD TO SHOPIFY:
+- Feature media video: geolocation-redirect-feature-media.mp4
+- Thumbnail image: geolocation-redirect-feature-thumbnail.jpg (1600x900)

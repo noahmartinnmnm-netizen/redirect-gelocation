@@ -41,6 +41,8 @@ const SAVED_LABEL = {
   whitelist: "Allowed IPs saved",
 };
 
+const BLOCKER_SAVE_BAR_ID = "ece-blocker-save-bar";
+
 function knownTemplateId(id) {
   return ECE_BLOCKER_TEMPLATES.some((item) => item.id === id) ? id : "";
 }
@@ -141,12 +143,12 @@ export function EceCountryBlockerPage({
 
     if (!result.ok) {
       const message = result.error || "The country blocker could not be saved.";
+      // Keep errors next to the section — BFS 4.2.4 rejects auto-dismissing error toasts.
       setErrors((current) => ({ ...current, [intent]: message }));
       if (whitelistRollback.current) {
         setWhitelist(whitelistRollback.current);
         whitelistRollback.current = null;
       }
-      shopify.toast.show(message);
       return;
     }
 
@@ -189,6 +191,21 @@ export function EceCountryBlockerPage({
     shopify.toast.show(SAVED_LABEL[intent] || "Country blocker saved");
   }, [countryCatalog, fetcher.state, fetcher.data, shopify]);
 
+  const appearanceUnsaved =
+    blockerDesignFingerprint(design) !== blockerDesignFingerprint(baselineDesign);
+
+  useEffect(() => {
+    if (!shopify?.saveBar) return;
+    if (appearanceUnsaved) shopify.saveBar.show(BLOCKER_SAVE_BAR_ID);
+    else shopify.saveBar.hide(BLOCKER_SAVE_BAR_ID);
+  }, [appearanceUnsaved, shopify]);
+
+  useEffect(() => {
+    return () => {
+      shopify?.saveBar?.hide?.(BLOCKER_SAVE_BAR_ID);
+    };
+  }, [shopify]);
+
   function submit(patch) {
     if (saving) return;
     pendingIntent.current = patch.intent;
@@ -222,6 +239,27 @@ export function EceCountryBlockerPage({
   function saveDesign() {
     if (!designDirty || saving) return;
     submit({ intent: "design", design });
+  }
+
+  function discardDesign() {
+    if (saving) return;
+    const restoredId =
+      knownTemplateId(baselineDesign?.templateId) ||
+      knownTemplateId(saved.design?.templateId) ||
+      initialTemplate;
+    const restored = baselineDesign?.templateId
+      ? {
+          templateId: restoredId,
+          content: { ...baselineDesign.content },
+          style: { ...baselineDesign.style },
+        }
+      : defaultBlockerDesign(restoredId);
+    setTemplateId(restoredId);
+    setDesigns((current) => ({
+      ...current,
+      [restoredId]: restored,
+    }));
+    setErrors((current) => ({ ...current, design: "" }));
   }
 
   function saveCountries() {
@@ -319,6 +357,26 @@ export function EceCountryBlockerPage({
 
   return (
     <s-page id="ece-blocker" heading="Country Blocker" inlineSize="large">
+      <s-link slot="breadcrumb-actions" href="/app">
+        Dashboard
+      </s-link>
+      <ui-save-bar id={BLOCKER_SAVE_BAR_ID}>
+        <button
+          id="ece-blocker-save-bar-save"
+          variant="primary"
+          disabled={!appearanceUnsaved || saving}
+          onClick={saveDesign}
+        >
+          Save
+        </button>
+        <button
+          id="ece-blocker-save-bar-discard"
+          disabled={saving}
+          onClick={discardDesign}
+        >
+          Discard
+        </button>
+      </ui-save-bar>
       <div className="ece-blocker">
         <style dangerouslySetInnerHTML={{ __html: blockerCss }} />
 

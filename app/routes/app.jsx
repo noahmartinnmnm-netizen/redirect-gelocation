@@ -15,10 +15,11 @@ export default function App() {
 
   return (
     <AppProvider embedded apiKey={apiKey}>
+      {/*
+        App name in admin nav points at App URL (/app). Do not add a separate
+        Home/Dashboard item — Built for Shopify 4.1.4 rejects that pattern.
+      */}
       <s-app-nav>
-        <s-link href="/app" rel="home">
-          Dashboard
-        </s-link>
         <s-link href="/app/redirect">Redirect</s-link>
         <s-link href="/app/popup">Popup</s-link>
         <s-link href="/app/blocker">Country Blocker</s-link>

@@ -59,8 +59,8 @@ export function EceDashboardOverview({
           </span>
           <span className="ece-dash__stat-hint">
             {activeEmbeds
-              ? "Running on your published theme"
-              : "Required for storefront redirects"}
+              ? `You have ${activeEmbeds} of ${embeds.length || 0} theme embeds active`
+              : "You have 0 theme embeds active"}
           </span>
         </article>
       </section>

@@ -257,6 +257,9 @@ export function EceRedirectPage({
 
   return (
     <s-page id="ece-redirect" heading="Redirect" inlineSize="large">
+      <s-link slot="breadcrumb-actions" href="/app">
+        Dashboard
+      </s-link>
       <s-button
         id="ece-add-rule"
         slot="primary-action"

@@ -28,7 +28,9 @@ export function EceActivateRedirection({ embeds, embedsError, onConfigure }) {
         </div>
         <span className={`ece-activate__count${activeCount ? " is-live" : ""}`}>
           <span className="ece-activate__dot" aria-hidden="true" />
-          {activeCount} of {embeds.length} active
+          {activeCount === 0
+            ? "You have 0 theme embeds active"
+            : `You have ${activeCount} of ${embeds.length} theme embeds active`}
         </span>
       </div>
 

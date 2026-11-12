@@ -18,7 +18,7 @@
     "graphql-codegen": "graphql-codegen",
     "vite": "vite",
     "typecheck": "react-router typegen && tsc --noEmit",
-    "test": "node --test extensions/ece-redirect/ece-auto-redirect.test.js extensions/ece-redirect/ece-redirect-popup.test.js extensions/ece-redirect/ece-country-blocker.test.js extensions/ece-redirect/ece-floating-selector.test.js app/utils/eceAppEmbeds.test.js app/utils/ecePopupDesign.test.js app/utils/eceCountryBlocker.test.js app/components/ece/eceSetupGuide.test.js"
+    "test": "node --test extensions/ece-redirect/ece-auto-redirect.test.js extensions/ece-redirect/ece-redirect-popup.test.js extensions/ece-redirect/ece-country-blocker.test.js extensions/ece-redirect/ece-floating-selector.test.js app/utils/eceAppEmbeds.test.js app/utils/ecePopupDesign.test.js app/utils/eceCountryBlocker.test.js app/utils/eceThemeExtensions.test.js app/components/ece/eceSetupGuide.test.js"
   },
   "type": "module",
   "engines": {

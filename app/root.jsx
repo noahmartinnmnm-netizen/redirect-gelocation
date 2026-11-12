@@ -1,5 +1,4 @@
 import { Links, Meta, Outlet, Scripts, ScrollRestoration } from "react-router";
-import { TawkChat } from "./components/TawkChat";
 
 export default function App() {
   return (
@@ -17,7 +16,6 @@ export default function App() {
       </head>
       <body>
         <Outlet />
-        <TawkChat />
         <ScrollRestoration />
         <Scripts />
       </body>

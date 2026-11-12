@@ -4,6 +4,9 @@ import { ECE_FAQ_ITEMS } from "./eceFaq";
 export function EceFaqPage() {
   return (
     <s-page id="ece-faq" heading="FAQ" inlineSize="large">
+      <s-link slot="breadcrumb-actions" href="/app">
+        Dashboard
+      </s-link>
       <div className="ece-faq">
         <style dangerouslySetInnerHTML={{ __html: faqCss }} />
 
@@ -51,7 +54,7 @@ export function EceFaqPage() {
         <aside className="ece-faq__aside" aria-label="Still stuck">
           <h3 className="ece-faq__aside-title">Still stuck?</h3>
           <p className="ece-faq__aside-copy">
-            Start on Dashboard: create a rule, turn on one embed, then check
+            Start on the app home: create a rule, turn on one embed, then check
             setup. Include your store domain if you contact support.
           </p>
         </aside>

@@ -48,6 +48,17 @@ const DROPDOWN_COLOR_FIELDS = [
   { key: "dropdownText", label: "Dropdown text" },
 ];
 
+const POPUP_SAVE_BAR_ID = "ece-popup-save-bar";
+
+function cloneDesign(design) {
+  return {
+    templateId: design.templateId,
+    content: { ...design.content },
+    style: { ...design.style },
+    preferences: { ...design.preferences },
+  };
+}
+
 function fieldValue(event) {
   const target = event.currentTarget || event.target;
   return target?.value ?? "";
@@ -88,6 +99,18 @@ export function EcePopupPage({ savedDesign = null, designError = "" }) {
     ECE_POPUP_TEMPLATES[0].id;
   const [templateId, setTemplateId] = useState(initialTemplateId);
   const [designs, setDesigns] = useState(() => designsWithSaved(savedDesign));
+  const [baselineDesign, setBaselineDesign] = useState(() =>
+    cloneDesign(
+      savedDesign?.templateId && !designError
+        ? {
+            templateId: savedDesign.templateId,
+            content: savedDesign.content,
+            style: savedDesign.style,
+            preferences: savedDesign.preferences,
+          }
+        : defaultPopupDesign(initialTemplateId),
+    ),
+  );
   const [baseline, setBaseline] = useState(() => {
     if (designError) return "";
     return popupDesignFingerprint(
@@ -139,13 +162,15 @@ export function EcePopupPage({ savedDesign = null, designError = "" }) {
 
     if (!result.ok) {
       const message = result.error || "The popup design could not be saved.";
+      // Keep errors on the page — BFS 4.2.4 rejects auto-dismissing error toasts.
       setSaveError(message);
-      shopify.toast.show(message);
       return;
     }
 
     const nextFingerprint = popupDesignFingerprint(result.design);
+    const saved = cloneDesign(result.design);
     setBaseline(nextFingerprint);
+    setBaselineDesign(saved);
     setPublished(true);
     setLoadError("");
     setSaveError("");
@@ -157,16 +182,23 @@ export function EcePopupPage({ savedDesign = null, designError = "" }) {
       }
       return {
         ...current,
-        [activeId]: {
-          templateId: activeId,
-          content: { ...result.design.content },
-          style: { ...result.design.style },
-          preferences: { ...result.design.preferences },
-        },
+        [activeId]: saved,
       };
     });
     shopify.toast.show("Popup design saved");
   }, [fetcher.state, fetcher.data, shopify]);
+
+  useEffect(() => {
+    if (!shopify?.saveBar) return;
+    if (dirty) shopify.saveBar.show(POPUP_SAVE_BAR_ID);
+    else shopify.saveBar.hide(POPUP_SAVE_BAR_ID);
+  }, [dirty, shopify]);
+
+  useEffect(() => {
+    return () => {
+      shopify?.saveBar?.hide?.(POPUP_SAVE_BAR_ID);
+    };
+  }, [shopify]);
 
   function update(group, key, value) {
     setDesigns((current) => ({
@@ -208,6 +240,18 @@ export function EcePopupPage({ savedDesign = null, designError = "" }) {
     fetcher.submit(formData, { method: "POST" });
   }
 
+  function discardDesign() {
+    if (saving) return;
+    const restored = cloneDesign(baselineDesign);
+    setTemplateId(restored.templateId);
+    setDesigns((current) => ({
+      ...current,
+      [restored.templateId]: restored,
+    }));
+    setSaveError("");
+    setOutcome("");
+  }
+
   function chooseTemplate(id) {
     setTemplateId(id);
     setSaveError("");
@@ -232,6 +276,26 @@ export function EcePopupPage({ savedDesign = null, designError = "" }) {
 
   return (
     <s-page id="ece-popup" heading="Popup" inlineSize="large">
+      <s-link slot="breadcrumb-actions" href="/app">
+        Dashboard
+      </s-link>
+      <ui-save-bar id={POPUP_SAVE_BAR_ID}>
+        <button
+          id="ece-popup-save-bar-save"
+          variant="primary"
+          disabled={!dirty || saving}
+          onClick={saveDesign}
+        >
+          Save
+        </button>
+        <button
+          id="ece-popup-save-bar-discard"
+          disabled={saving}
+          onClick={discardDesign}
+        >
+          Discard
+        </button>
+      </ui-save-bar>
       <s-button
         id="ece-popup-save"
         slot="primary-action"
@@ -259,8 +323,10 @@ export function EcePopupPage({ savedDesign = null, designError = "" }) {
         </div>
 
         <div
-          className={`ece-popup__draft-note${noteSaved ? " is-saved" : ""}`}
-          role="note"
+          className={`ece-popup__draft-note${
+            saveError || loadError ? " is-error" : noteSaved ? " is-saved" : ""
+          }`}
+          role={saveError || loadError ? "alert" : "note"}
         >
           <span className="ece-popup__draft-dot" aria-hidden="true" />
           {statusNote}

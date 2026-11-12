@@ -62,6 +62,15 @@
   box-shadow: 0 0 0 3px rgba(26, 127, 55, 0.16);
 }
 
+.ece-popup__draft-note.is-error {
+  color: #8e1f0b;
+}
+
+.ece-popup__draft-note.is-error .ece-popup__draft-dot {
+  background: #d72c0d;
+  box-shadow: 0 0 0 3px rgba(215, 44, 13, 0.16);
+}
+
 /* Template picker */
 
 .ece-popup__templates {

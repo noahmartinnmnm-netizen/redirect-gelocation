@@ -13,6 +13,7 @@ import {
   ruleNameError,
   takenCountryKeys,
 } from "./eceRuleModel";
+import { embedsFromAppExtensions } from "../../utils/eceThemeExtensions";
 
 const RULE_ACTION = "/app/redirect";
 
@@ -47,6 +48,8 @@ export function EceHomePage({
   const handledResult = useRef(null);
   const [addDraft, setAddDraft] = useState(emptyDraft);
   const [addPickerKey, setAddPickerKey] = useState(0);
+  const [liveEmbeds, setLiveEmbeds] = useState(embeds);
+  const [liveEmbedsError, setLiveEmbedsError] = useState(embedsError);
 
   const groups = catalogGroups(countryCatalog);
   const rulesLocked = Boolean(rulesError);
@@ -58,15 +61,57 @@ export function EceHomePage({
   });
 
   useEffect(() => {
+    setLiveEmbeds(embeds);
+    setLiveEmbedsError(embedsError);
+  }, [embeds, embedsError]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function syncEmbedStatusFromAppBridge() {
+      if (!shopify?.app?.extensions) return;
+      try {
+        const extensions = await shopify.app.extensions();
+        if (cancelled) return;
+        const next = embedsFromAppExtensions(embeds, extensions);
+        if (!next) return;
+        setLiveEmbeds(next);
+        setLiveEmbedsError(null);
+      } catch (error) {
+        if (cancelled) return;
+        console.error("ece app.extensions() failed", error?.message || error);
+      }
+    }
+
+    syncEmbedStatusFromAppBridge();
+    return () => {
+      cancelled = true;
+    };
+  }, [embeds, shopify]);
+
+  useEffect(() => {
     function refreshEmbedStatus() {
       if (document.visibilityState !== "visible") return;
       if (revalidator.state !== "idle") return;
       revalidator.revalidate();
+      if (!shopify?.app?.extensions) return;
+      shopify.app
+        .extensions()
+        .then((extensions) => {
+          const next = embedsFromAppExtensions(embeds, extensions);
+          if (next) {
+            setLiveEmbeds(next);
+            setLiveEmbedsError(null);
+          }
+        })
+        .catch((error) => {
+          console.error("ece app.extensions() failed", error?.message || error);
+        });
     }
 
     document.addEventListener("visibilitychange", refreshEmbedStatus);
     return () => document.removeEventListener("visibilitychange", refreshEmbedStatus);
-  }, [revalidator]);
+  }, [embeds, revalidator, shopify]);
 
   useEffect(() => {
     if (addPickerKey === 0) return;
@@ -163,7 +208,7 @@ export function EceHomePage({
         shop={shop}
         rules={rules}
         blocker={blocker}
-        embeds={embeds}
+        embeds={liveEmbeds}
         onCreateRedirect={openCreateRedirect}
         onViewRedirects={() => navigate(RULE_ACTION)}
         onCreateBlock={() => navigate("/app/blocker")}
@@ -176,15 +221,15 @@ export function EceHomePage({
       <EceDashboardOverview
         rules={rules}
         rulesError={rulesError}
-        embeds={embeds}
+        embeds={liveEmbeds}
         onCreateRedirect={openCreateRedirect}
         onViewRedirects={() => navigate(RULE_ACTION)}
         onOpenPopup={() => navigate("/app/popup")}
         onOpenBlocker={() => navigate("/app/blocker")}
         activation={
           <EceActivateRedirection
-            embeds={embeds}
-            embedsError={embedsError}
+            embeds={liveEmbeds}
+            embedsError={liveEmbedsError}
             onConfigure={configureEmbed}
           />
         }
