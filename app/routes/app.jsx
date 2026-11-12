@@ -16,10 +16,14 @@ export default function App() {
   return (
     <AppProvider embedded apiKey={apiKey}>
       {/*
-        App name in admin nav points at App URL (/app). Do not add a separate
-        Home/Dashboard item — Built for Shopify 4.1.4 rejects that pattern.
+        rel="home" sets the app-name click target to /app and stays hidden in
+        the menu. Without it, Shopify defaults home to / (template login page).
+        Do not add a visible Home/Dashboard item (Built for Shopify 4.1.4).
       */}
       <s-app-nav>
+        <s-link href="/app" rel="home">
+          Home
+        </s-link>
         <s-link href="/app/redirect">Redirect</s-link>
         <s-link href="/app/popup">Popup</s-link>
         <s-link href="/app/blocker">Country Blocker</s-link>
